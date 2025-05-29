@@ -4,22 +4,65 @@
   <meta charset="UTF-8" />
   <title>Live Model Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <script nomodule src="https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js"></script>
+
+  <!-- Model Viewer Library -->
+  <script
+    type="module"
+    src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"
+  ></script>
+  <script
+    nomodule
+    src="https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js"
+  ></script>
+
   <style>
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
+      background: #fff;
+      font-family: sans-serif;
     }
+
     model-viewer {
       width: 100%;
       height: 100vh;
       background-color: #f5f5f5;
     }
+
+    .loading-text {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      z-index: 10;
+    }
+
+    .progress-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 4px;
+      width: 100%;
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .progress-bar-inner {
+      height: 100%;
+      width: 0%;
+      background-color: #da0e64;
+      transition: width 0.3s ease;
+    }
   </style>
 </head>
+
 <body>
+  <div class="loading-text" id="loading-text">Loading model...</div>
+
   <model-viewer
     id="modelViewer"
     alt="3D Model"
@@ -27,12 +70,18 @@
     camera-controls
     auto-rotate
     disable-tap
-    src=""
     environment-image="https://cdn.pixelbin.io/v2/falling-surf-7c8bb8/original/webflow-team/GlamAR/Assests/neutral.hdr"
-  ></model-viewer>
+    style="width: 100%; height: 100vh"
+  >
+    <div slot="progress-bar" class="progress-bar">
+      <div class="progress-bar-inner" id="progressBar"></div>
+    </div>
+  </model-viewer>
 
   <script>
     const modelViewer = document.getElementById("modelViewer");
+    const loadingText = document.getElementById("loading-text");
+    const progressBar = document.getElementById("progressBar");
 
     const models = {
       ajwain: "https://cdn.pixelbin.io/v2/dummy-cloudname/original/Ajwain_Watch_27-swjpXI_oa.glb",
@@ -42,14 +91,42 @@
       watch04: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/watches/watch_04.glb"
     };
 
-    // Listen for messages from the parent window
-    window.addEventListener("message", (event) => {
-      const { modelKey } = event.data;
-      console.log("📨 Received in iframe:", modelKey);
-      if (models[modelKey]) {
-        modelViewer.src = models[modelKey];
+    function loadModel(key) {
+      const url = models[key];
+      if (url) {
+        console.log("✅ Changing model to:", key, url);
+        modelViewer.src = url;
+        loadingText.style.display = "block";
       } else {
-        console.warn("❌ Invalid modelKey received:", modelKey);
+        console.warn("❌ Invalid modelKey received:", key);
+        loadingText.innerText = "Model not found.";
+      }
+    }
+
+    // Initial load via query string
+    const query = new URLSearchParams(window.location.search);
+    const modelKey = query.get("model");
+    if (modelKey) {
+      loadModel(modelKey);
+    }
+
+    // Handle progress
+    modelViewer.addEventListener("progress", (event) => {
+      const progress = event.detail.totalProgress;
+      progressBar.style.width = `${progress * 100}%`;
+    });
+
+    modelViewer.addEventListener("load", () => {
+      loadingText.style.display = "none";
+      console.log("✅ Model loaded:", modelViewer.src);
+    });
+
+    // Listen for messages from Webflow
+    window.addEventListener("message", (event) => {
+      const data = event.data;
+      console.log("📩 Received message:", data);
+      if (data && data.modelKey) {
+        loadModel(data.modelKey);
       }
     });
   </script>
