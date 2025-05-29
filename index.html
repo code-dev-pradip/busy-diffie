@@ -78,57 +78,67 @@
     </div>
   </model-viewer>
 
-  <script>
-    const modelViewer = document.getElementById("modelViewer");
-    const loadingText = document.getElementById("loading-text");
-    const progressBar = document.getElementById("progressBar");
+<script>
+  const modelViewer = document.getElementById("modelViewer");
+  const loadingText = document.getElementById("loading-text");
+  const progressBar = document.getElementById("progressBar");
 
-    const models = {
-      ajwain: "https://cdn.pixelbin.io/v2/dummy-cloudname/original/Ajwain_Watch_27-swjpXI_oa.glb",
-      djoser: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/Day_Night/DJOSER.glb",
-      watch07: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/watches/watch_07.glb",
-      watch06: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/watches/watch_06.glb",
-      watch04: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/watches/watch_04.glb"
-    };
+  const models = {
+    ajwain: "https://cdn.pixelbin.io/v2/dummy-cloudname/original/Ajwain_Watch_27-swjpXI_oa.glb",
+    djoser: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/Day_Night/DJOSER.glb",
+    watch07: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/watches/watch_07.glb",
+    watch06: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/watches/watch_06.glb",
+    watch04: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/watches/watch_04.glb"
+  };
 
-    function loadModel(key) {
-      const url = models[key];
-      if (url) {
-        console.log("✅ Changing model to:", key, url);
-        modelViewer.src = url;
-        loadingText.style.display = "block";
-      } else {
-        console.warn("❌ Invalid modelKey received:", key);
-        loadingText.innerText = "Model not found.";
-      }
+  function loadModel(key) {
+    const url = models[key];
+    if (url) {
+      console.log("✅ Changing model to:", key, url);
+      loadingText.innerText = "Loading model...";
+      loadingText.style.display = "block";
+      progressBar.style.width = "0%";
+
+      modelViewer.src = url;
+    } else {
+      console.warn("❌ Invalid modelKey received:", key);
+      loadingText.innerText = "Model not found.";
+      loadingText.style.display = "block";
+      progressBar.style.width = "0%";
     }
+  }
 
-    // Initial load via query string
-    const query = new URLSearchParams(window.location.search);
-    const modelKey = query.get("model");
-    if (modelKey) {
-      loadModel(modelKey);
+  // Initial load via query string
+  const query = new URLSearchParams(window.location.search);
+  const initialModelKey = query.get("model");
+  if (initialModelKey) {
+    loadModel(initialModelKey);
+  }
+
+  // Handle progress
+  modelViewer.addEventListener("progress", (event) => {
+    const progress = event.detail.totalProgress;
+    progressBar.style.width = `${progress * 100}%`;
+  });
+
+  modelViewer.addEventListener("load", () => {
+    loadingText.style.display = "none";
+    console.log("✅ Model loaded:", modelViewer.src);
+  });
+
+  // Listen for messages from parent (Webflow)
+  window.addEventListener("message", (event) => {
+    // OPTIONAL: Add origin check for security if you know your Webflow domain
+    // if (event.origin !== "https://your-webflow-site.com") return;
+
+    const data = event.data;
+    console.log("📩 Received message:", data);
+
+    if (data && typeof data.modelKey === "string") {
+      loadModel(data.modelKey);
     }
+  });
+</script>
 
-    // Handle progress
-    modelViewer.addEventListener("progress", (event) => {
-      const progress = event.detail.totalProgress;
-      progressBar.style.width = `${progress * 100}%`;
-    });
-
-    modelViewer.addEventListener("load", () => {
-      loadingText.style.display = "none";
-      console.log("✅ Model loaded:", modelViewer.src);
-    });
-
-    // Listen for messages from Webflow
-    window.addEventListener("message", (event) => {
-      const data = event.data;
-      console.log("📩 Received message:", data);
-      if (data && data.modelKey) {
-        loadModel(data.modelKey);
-      }
-    });
-  </script>
 </body>
 </html>
