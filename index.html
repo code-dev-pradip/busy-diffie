@@ -1,55 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Live Model Viewer</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-    <script nomodule src="https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js"></script>
-    <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
+<head>
+  <meta charset="UTF-8" />
+  <title>Live Model Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <script nomodule src="https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+    model-viewer {
+      width: 100%;
+      height: 100vh;
+      background-color: #f5f5f5;
+    }
+  </style>
+</head>
+<body>
+  <model-viewer
+    id="modelViewer"
+    alt="3D Model"
+    shadow-intensity="1"
+    camera-controls
+    auto-rotate
+    disable-tap
+    src=""
+    environment-image="https://cdn.pixelbin.io/v2/falling-surf-7c8bb8/original/webflow-team/GlamAR/Assests/neutral.hdr"
+  ></model-viewer>
+
+  <script>
+    const modelViewer = document.getElementById("modelViewer");
+
+    const models = {
+      ajwain: "https://cdn.pixelbin.io/v2/dummy-cloudname/original/Ajwain_Watch_27-swjpXI_oa.glb",
+      djoser: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/Day_Night/DJOSER.glb",
+      watch07: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/watches/watch_07.glb",
+      watch06: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/watches/watch_06.glb",
+      watch04: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/watches/watch_04.glb"
+    };
+
+    // Listen for messages from the parent window
+    window.addEventListener("message", (event) => {
+      const { modelKey } = event.data;
+      console.log("📨 Received in iframe:", modelKey);
+      if (models[modelKey]) {
+        modelViewer.src = models[modelKey];
+      } else {
+        console.warn("❌ Invalid modelKey received:", modelKey);
       }
-      model-viewer {
-        width: 100%;
-        height: 100vh;
-        background-color: #f5f5f5;
-      }
-    </style>
-  </head>
-  <body>
-    <model-viewer
-      id="modelViewer"
-      alt="3D Model"
-      shadow-intensity="1"
-      camera-controls
-      auto-rotate
-      disable-tap
-      src=""
-      environment-image="https://cdn.pixelbin.io/v2/falling-surf-7c8bb8/original/webflow-team/GlamAR/Assests/neutral.hdr"
-    ></model-viewer>
-
-    <script>
-      const modelViewer = document.getElementById("modelViewer");
-
-      const models = {
-        ajwain: "https://cdn.pixelbin.io/v2/dummy-cloudname/original/Ajwain_Watch_27-swjpXI_oa.glb",
-        djoser: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/Day_Night/DJOSER.glb",
-        watch07: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/watches/watch_07.glb",
-        watch06: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/watches/watch_06.glb",
-        watch04: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/watches/watch_04.glb"
-      };
-
-      // 🔥 Listen for messages from Webflow
-      window.addEventListener("message", (event) => {
-        const { modelKey } = event.data;
-        console.log("📨 Received in iframe:", modelKey);
-        if (models[modelKey]) {
-          modelViewer.src = models[modelKey];
-        }
-      });
-    </script>
-  </body>
+    });
+  </script>
+</body>
 </html>
