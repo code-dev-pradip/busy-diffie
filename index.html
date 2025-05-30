@@ -91,37 +91,43 @@
     watch04: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/watches/watch_04.glb"
   };
 
-  function preloadModels() {
+  const cachedBlobs = {};
+
+  async function preloadModels() {
     for (const key in models) {
-      fetch(models[key])
-        .then(response => {
-          if (response.ok) {
-            console.log(`🟢 Preloaded ${key}`);
-          } else {
-            console.warn(`⚠️ Failed to preload ${key}`);
-          }
-        })
-        .catch(error => console.error(`❌ Error preloading ${key}:`, error));
+      try {
+        const response = await fetch(models[key]);
+        const blob = await response.blob();
+        const objectURL = URL.createObjectURL(blob);
+        cachedBlobs[key] = objectURL;
+        console.log(`🟢 Preloaded & cached ${key}`);
+      } catch (err) {
+        console.warn(`❌ Failed to preload ${key}`, err);
+      }
     }
+
+    // If there's a query param, load it
+    const query = new URLSearchParams(window.location.search);
+    const modelKey = query.get("model");
+    if (modelKey) loadModel(modelKey);
   }
 
   function loadModel(key) {
-    const url = models[key];
-    if (url) {
-      console.log("✅ Changing model to:", key, url);
-      modelViewer.src = url;
+    const blobURL = cachedBlobs[key];
+    if (blobURL) {
+      modelViewer.src = blobURL;
       loadingText.style.display = "block";
     } else {
-      console.warn("❌ Invalid modelKey received:", key);
-      loadingText.innerText = "Model not found.";
+      console.warn("❌ Model key not found in cache:", key);
     }
   }
 
-  const query = new URLSearchParams(window.location.search);
-  const modelKey = query.get("model");
-  if (modelKey) {
-    loadModel(modelKey);
-  }
+  window.addEventListener("message", (event) => {
+    const data = event.data;
+    if (data && data.modelKey) {
+      loadModel(data.modelKey);
+    }
+  });
 
   modelViewer.addEventListener("progress", (event) => {
     const progress = event.detail.totalProgress;
@@ -130,20 +136,11 @@
 
   modelViewer.addEventListener("load", () => {
     loadingText.style.display = "none";
-    console.log("✅ Model loaded:", modelViewer.src);
   });
 
-  window.addEventListener("message", (event) => {
-    const data = event.data;
-    console.log("📩 Received message:", data);
-    if (data && data.modelKey) {
-      loadModel(data.modelKey);
-    }
-  });
-
-  // 👇 Trigger preloading after iframe page is fully loaded
   window.addEventListener("DOMContentLoaded", preloadModels);
 </script>
+
 
 
 </body>
