@@ -91,31 +91,38 @@
     watch04: "https://cdn.pixelbin.io/v2/glamar-fynd-835885/original/glamar-3d-models/watches/watch_04.glb"
   };
 
+  function preloadModels() {
+    for (const key in models) {
+      fetch(models[key])
+        .then(response => {
+          if (response.ok) {
+            console.log(`🟢 Preloaded ${key}`);
+          } else {
+            console.warn(`⚠️ Failed to preload ${key}`);
+          }
+        })
+        .catch(error => console.error(`❌ Error preloading ${key}:`, error));
+    }
+  }
+
   function loadModel(key) {
     const url = models[key];
     if (url) {
       console.log("✅ Changing model to:", key, url);
-      loadingText.innerText = "Loading model...";
-      loadingText.style.display = "block";
-      progressBar.style.width = "0%";
-
       modelViewer.src = url;
+      loadingText.style.display = "block";
     } else {
       console.warn("❌ Invalid modelKey received:", key);
       loadingText.innerText = "Model not found.";
-      loadingText.style.display = "block";
-      progressBar.style.width = "0%";
     }
   }
 
-  // Initial load via query string
   const query = new URLSearchParams(window.location.search);
-  const initialModelKey = query.get("model");
-  if (initialModelKey) {
-    loadModel(initialModelKey);
+  const modelKey = query.get("model");
+  if (modelKey) {
+    loadModel(modelKey);
   }
 
-  // Handle progress
   modelViewer.addEventListener("progress", (event) => {
     const progress = event.detail.totalProgress;
     progressBar.style.width = `${progress * 100}%`;
@@ -126,19 +133,18 @@
     console.log("✅ Model loaded:", modelViewer.src);
   });
 
-  // Listen for messages from parent (Webflow)
   window.addEventListener("message", (event) => {
-    // OPTIONAL: Add origin check for security if you know your Webflow domain
-    // if (event.origin !== "https://your-webflow-site.com") return;
-
     const data = event.data;
     console.log("📩 Received message:", data);
-
-    if (data && typeof data.modelKey === "string") {
+    if (data && data.modelKey) {
       loadModel(data.modelKey);
     }
   });
+
+  // 👇 Trigger preloading after iframe page is fully loaded
+  window.addEventListener("DOMContentLoaded", preloadModels);
 </script>
+
 
 </body>
 </html>
